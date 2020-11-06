@@ -1,11 +1,11 @@
 # multirotor_geometry_control
-* This is a Gazebo simulation package migrated from the [rotorS](https://github.com/ethz-asl/rotors_simulator) for ros 18.04.
+* This is a Gazebo simulation package migrated from the [rotorS](https://github.com/ethz-asl/rotors_simulator) for ros-melodic (Ubuntu 18.04).
 * The geometry controller of the multirotor is implemented in this simulation.
-* The parameters of the UAV can be found in /integral_concurrent_learning_UAV/rotors_simulator/rotors_description/urdf/firefly.xacro.
-* Gains used for geometric control are defined in /integral_concurrent_learning_UAV/rotors_simulator/rotors_gazebo/resource/lee_controller_firefly.yaml.
+* The parameters of the multirotor can be found in /multirotor_geometry_control/rotors_simulator/rotors_description/urdf/firefly.xacro.
+* Gains used for geometric control are defined in /multirotor_geometry_control/rotors_simulator/rotors_gazebo/resource/lee_controller_firefly.yaml.
 
 ## Requirements
-* Ubuntu 18.04 ros-kinetic
+* Ubuntu 18.04 ros-melodic
 * Gazebo 9 simulator
 
 ```
