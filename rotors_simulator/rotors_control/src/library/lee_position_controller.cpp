@@ -38,7 +38,6 @@ LeePositionController::~LeePositionController() {}
 
 void LeePositionController::InitializeParameters()
 {
-
 	ROS_INFO("initialize");
 	calculateAllocationMatrix(vehicle_parameters_.rotor_configuration_, &(controller_parameters_.allocation_matrix_));
 	// To make the tuning independent of the inertia matrix we divide here.
@@ -49,36 +48,7 @@ void LeePositionController::InitializeParameters()
 	            0,0.045,0,
 	            0,0,0.098;
 	angular_acc_to_rotor_velocities_.resize(vehicle_parameters_.rotor_configuration_.rotors.size(), 4);
-
-	theta_diag_hat << 0, 0, 0;
-	theta_diag_hat_dot << 0, 0, 0;
-	last_omega << 0, 0, 0;
-	last_moment_control_input << 0, 0, 0;
-	last_angular_velocity << 0, 0, 0;
-	Y_diag_cl_integral_last << Eigen::Matrix3d::Zero();
-	y_diag_cl_lower_case << Eigen::Matrix3d::Zero();
-	M_integral << 0, 0, 0;
-	M_integral_last << 0, 0, 0;
-	M_bar << 0, 0, 0;
-	mat_FIFO.resize(3, 1);
-	index = 0;
-	full = 0;
-	ICL_N = 45;
-	last_time = ros::Time().toSec();
 	dt = 0.02;
-	theta_m_hat << 0, 0, 0;
-	theta_m_hat_dot << 0, 0, 0;
-
-	theta_m_hat_R = 0;
-	theta_m_hat_dot_R = 0;
-
-	mat_mass_FIFO.resize(1, 1);
-	y_m_cl_integral << Eigen::Vector3d::Zero();
-	y_m_cl_integral_last << Eigen::Vector3d::Zero();
-	y_m_cl_lower_case << Eigen::Vector3d::Zero();
-	index_m = 0;
-	full_m = 0;
-	ICL_N_m = 20;
 
 	initialized_params_ = true;
 }
@@ -94,18 +64,6 @@ void LeePositionController::CalculateRotorVelocities(Eigen::VectorXd* rotor_velo
 		*rotor_velocities = Eigen::VectorXd::Zero(rotor_velocities->rows());
 		return;
 	}
-
-	if (index >= ICL_N) {
-		full = 1;
-		index = 0;
-	}
-	index++;
-
-	if (index_m >= ICL_N_m) {
-		full_m = 1;
-		index_m = 0;
-	}
-	index_m++;
 
 	Eigen::Vector3d position_error;
 	Eigen::Vector3d velocity_error;
