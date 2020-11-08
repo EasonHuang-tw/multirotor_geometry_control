@@ -80,7 +80,6 @@ void LeePositionController::InitializeParameters()
 	full_m = 0;
 	ICL_N_m = 20;
 
-
 	initialized_params_ = true;
 }
 
@@ -145,7 +144,7 @@ void LeePositionController::CalculateRotorVelocities(Eigen::VectorXd* rotor_velo
 	double thrust = -force_control_input.dot(odometry_.orientation.toRotationMatrix().col(2));
 
 	// this block use angular acceleration control input to compute the rotor velocities of every rotor
-	/*
+#if 0
 	// [4, 1] vector for angular acceleration and thrust
 	Eigen::Vector4d angular_acceleration_thrust;
 	angular_acceleration_thrust.block<3, 1>(0, 0) = angular_acceleration;
@@ -162,7 +161,7 @@ void LeePositionController::CalculateRotorVelocities(Eigen::VectorXd* rotor_velo
 	*rotor_velocities = angular_acc_to_rotor_velocities_ * angular_acceleration_thrust;
 	*rotor_velocities = rotor_velocities->cwiseMax(Eigen::VectorXd::Zero(rotor_velocities->rows()));
 	*rotor_velocities = rotor_velocities->cwiseSqrt();
-	*/
+#endif
 
 	// this block use moment control input to compute the rotor velocities of every rotor
 	// [4, 1] vector for moment and thrust
@@ -178,7 +177,6 @@ void LeePositionController::CalculateRotorVelocities(Eigen::VectorXd* rotor_velo
 	*rotor_velocities = moment_thrust_to_rotor_velocities_ * moment_thrust;
 	*rotor_velocities = rotor_velocities->cwiseMax(Eigen::VectorXd::Zero(rotor_velocities->rows()));
 	*rotor_velocities = rotor_velocities->cwiseSqrt();
-
 }
 
 void LeePositionController::SetOdometry(const EigenOdometry& odometry)
@@ -215,8 +213,6 @@ void LeePositionController::ComputeDesiredForce(Eigen::Vector3d* force_control_i
 	                        + velocity_error->cwiseProduct(controller_parameters_.velocity_gain_))
 	                       - vehicle_parameters_.mass_ * vehicle_parameters_.gravity_ * e_3
 	                       - vehicle_parameters_.mass_ * command_trajectory_.acceleration_W;
-
-
 }
 
 // Implementation from the T. Lee et al. paper
@@ -236,10 +232,9 @@ void LeePositionController::ComputeDesiredAngularAcc(const Eigen::Vector3d& forc
 	if(yaw <0 ) {
 		yaw+=6.28;
 	}
+
 	/*double yaw = command_trajectory_.getYaw();*/
 	b1_des << cos(yaw), sin(yaw), 0;
-	//b1_des << 1, 0, 0;
-	//b1_des << cos(90*M_PI/180), sin(90*M_PI/180), 0;
 
 	// b_3_d is calculated in ComputeDesiredForce()
 	Eigen::Vector3d b3_des;
@@ -261,22 +256,12 @@ void LeePositionController::ComputeDesiredAngularAcc(const Eigen::Vector3d& forc
 	Eigen::Matrix3d angle_error_matrix = 0.5 * (R_des.transpose() * R - R.transpose() * R_des);
 	vectorFromSkewMatrix(angle_error_matrix, &angle_error);
 
-	end = std::chrono::system_clock::now();
-	std::chrono::duration<double> elapsed_seconds = end - start;
-	double dt_tictoc = elapsed_seconds.count();
-	//std::cout << "dt_tictoc = " << std::endl << dt_tictoc << std::endl;
-	//double dt = 0.02;
-	start = std::chrono::system_clock::now();
-
-
 	Eigen::Matrix3d R_des_dot;
 	R_des_dot = ( R_des-Last_R_des )/dt;
 	Eigen::Matrix3d angular_rate_des_matrix = R_des.transpose() * R_des_dot;
 	Eigen::Vector3d angular_rate_des;
 	vectorFromSkewMatrix(angular_rate_des_matrix, &angular_rate_des);
 
-	//Eigen::Vector3d angular_rate_des(Eigen::Vector3d::Zero());
-	//angular_rate_des[2] = command_trajectory_.getYawRate();
 	angular_rate_error = odometry_.angular_velocity - R.transpose() * R_des * angular_rate_des;
 
 	k_R = controller_parameters_.attitude_gain_.transpose();
