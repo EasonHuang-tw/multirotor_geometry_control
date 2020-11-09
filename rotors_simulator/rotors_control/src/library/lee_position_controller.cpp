@@ -40,15 +40,7 @@ void LeePositionController::InitializeParameters()
 {
 	ROS_INFO("initialize");
 	calculateAllocationMatrix(vehicle_parameters_.rotor_configuration_, &(controller_parameters_.allocation_matrix_));
-	// To make the tuning independent of the inertia matrix we divide here.
-	Last_R_des.setZero();
-	Last_angular_rate_des.setZero();
-	I.setZero();
-	Inertia_hat <<  0.034,0,0,
-	            0,0.045,0,
-	            0,0,0.098;
 	angular_acc_to_rotor_velocities_.resize(vehicle_parameters_.rotor_configuration_.rotors.size(), 4);
-	dt = 0.02;
 
 	initialized_params_ = true;
 }
@@ -75,7 +67,8 @@ void LeePositionController::CalculateRotorVelocities(Eigen::VectorXd* rotor_velo
 	// compute angular acceleration and moment control input
 	Eigen::Vector3d angular_acceleration;
 	Eigen::Vector3d moment_control_input;
-	ComputeDesiredAngularAcc(force_control_input, &angular_acceleration, &moment_control_input);
+	ComputeDesiredMoment(force_control_input, &moment_control_input);
+
 	(theta_esti->x) = theta_diag_hat(0);
 	(theta_esti->y) = theta_diag_hat(1);
 	(theta_esti->z) = theta_diag_hat(2);
@@ -101,35 +94,11 @@ void LeePositionController::CalculateRotorVelocities(Eigen::VectorXd* rotor_velo
 	// comput thrust control input and project thrust onto body z axis.
 	double thrust = -force_control_input.dot(odometry_.orientation.toRotationMatrix().col(2));
 
-	// this block use angular acceleration control input to compute the rotor velocities of every rotor
-#if 0
-	// [4, 1] vector for angular acceleration and thrust
-	Eigen::Vector4d angular_acceleration_thrust;
-	angular_acceleration_thrust.block<3, 1>(0, 0) = angular_acceleration;
-	angular_acceleration_thrust(3) = thrust;
-
-	// inertia matrix
-	I.block<3, 3>(0, 0) = Inertia_hat;
-	I(3, 3) = 1;
-
-	// compute (inverse of allocation matrix)*(inertia matrix)
-	angular_acc_to_rotor_velocities_ = controller_parameters_.allocation_matrix_.transpose()* (controller_parameters_.allocation_matrix_* controller_parameters_.allocation_matrix_.transpose()).inverse() * I;
-
-	// compute every rotor's velocities
-	*rotor_velocities = angular_acc_to_rotor_velocities_ * angular_acceleration_thrust;
-	*rotor_velocities = rotor_velocities->cwiseMax(Eigen::VectorXd::Zero(rotor_velocities->rows()));
-	*rotor_velocities = rotor_velocities->cwiseSqrt();
-#endif
-
 	// this block use moment control input to compute the rotor velocities of every rotor
 	// [4, 1] vector for moment and thrust
 	Eigen::Vector4d moment_thrust;
 	moment_thrust.block<3, 1>(0, 0) = moment_control_input;
 	moment_thrust(3) = thrust;
-
-	// inertia matrix
-	I.block<3, 3>(0, 0) = Inertia_hat;
-	I(3, 3) = 1;
 
 	moment_thrust_to_rotor_velocities_ = controller_parameters_.allocation_matrix_.transpose()* (controller_parameters_.allocation_matrix_* controller_parameters_.allocation_matrix_.transpose()).inverse();
 	*rotor_velocities = moment_thrust_to_rotor_velocities_ * moment_thrust;
@@ -175,10 +144,10 @@ void LeePositionController::ComputeDesiredForce(Eigen::Vector3d* force_control_i
 
 // Implementation from the T. Lee et al. paper
 // Control of complex maneuvers for a quadrotor UAV using geometric methods on SE(3)
-void LeePositionController::ComputeDesiredAngularAcc(const Eigen::Vector3d& force_control_input,
-                Eigen::Vector3d* angular_acceleration, Eigen::Vector3d* moment_control_input)
+void LeePositionController::ComputeDesiredMoment(const Eigen::Vector3d& force_control_input,
+                Eigen::Vector3d* moment_control_input)
 {
-	assert(angular_acceleration);
+	assert(moment_control_input);
 
 	// quaternion -> rotation matrix
 	Eigen::Matrix3d R = odometry_.orientation.toRotationMatrix();
@@ -214,18 +183,13 @@ void LeePositionController::ComputeDesiredAngularAcc(const Eigen::Vector3d& forc
 	Eigen::Matrix3d angle_error_matrix = 0.5 * (R_des.transpose() * R - R.transpose() * R_des);
 	vectorFromSkewMatrix(angle_error_matrix, &angle_error);
 
-	Eigen::Matrix3d R_des_dot;
-	R_des_dot = ( R_des-Last_R_des )/dt;
-	Eigen::Matrix3d angular_rate_des_matrix = R_des.transpose() * R_des_dot;
-	Eigen::Vector3d angular_rate_des;
-	vectorFromSkewMatrix(angular_rate_des_matrix, &angular_rate_des);
-
+	// TODO(burrimi) include angular rate references at some point.
+	Eigen::Vector3d angular_rate_des(Eigen::Vector3d::Zero());
+	angular_rate_des[2] = command_trajectory_.getYawRate();
 	angular_rate_error = odometry_.angular_velocity - R.transpose() * R_des * angular_rate_des;
 
-	k_R = controller_parameters_.attitude_gain_.transpose();
-	k_omega = controller_parameters_.angular_rate_gain_.transpose();
-	*moment_control_input = - angle_error.cwiseProduct(k_R)
-	                        -angular_rate_error.cwiseProduct(k_omega)
-	                        + odometry_.angular_velocity.cross(Inertia_hat*odometry_.angular_velocity);
+	*moment_control_input = - angle_error.cwiseProduct(controller_parameters_.attitude_gain_)
+	                        - angular_rate_error.cwiseProduct(controller_parameters_.angular_rate_gain_)
+	                        + odometry_.angular_velocity.cross(vehicle_parameters_.inertia_*odometry_.angular_velocity);
 }
 }
