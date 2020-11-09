@@ -144,9 +144,8 @@ class LeePositionController {
   EigenOdometry odometry_;
 
   
-  void ComputeDesiredAngularAcc(const Eigen::Vector3d& acceleration,
-                                Eigen::Vector3d* angular_acceleration, Eigen::Vector3d* moment_control_input) ;
-  void ComputeDesiredForce(Eigen::Vector3d* force_control_input, Eigen::Vector3d* position_error, Eigen::Vector3d* velocity_error) ;
+  void ComputeDesiredMoment(const Eigen::Vector3d& acceleration, Eigen::Vector3d* moment_control_input);
+  void ComputeDesiredForce(Eigen::Vector3d* force_control_input, Eigen::Vector3d* position_error, Eigen::Vector3d* velocity_error);
 };
 }
 
