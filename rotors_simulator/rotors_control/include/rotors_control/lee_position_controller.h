@@ -73,61 +73,8 @@ public:
 
 	LeePositionControllerParameters controller_parameters_;
 	VehicleParameters vehicle_parameters_;
-	Eigen::Matrix3d  Last_R_des;
-	Eigen::Vector3d  Last_angular_rate_des;
-	Eigen::Matrix3d  Inertia_hat;
-	Eigen::Matrix4d  I;
 
-	// for moment of inertia estimation
-	int index;
-	int full;
-	int ICL_N;
-	Eigen::Vector3d   mat_now;                    // 3x1
-	Eigen::Vector3d   theta_diag_hat;             // 3x1
-	Eigen::Vector3d   theta_diag_hat_dot;         // 3x1
-	Eigen::Vector3d   last_omega;                 // 3x1
-	Eigen::Vector3d   last_moment_control_input;  // 3x1
-	Eigen::Vector3d   M_integral;                 // 3x1
-	Eigen::Vector3d   M_integral_last;            // 3x1
-	Eigen::Vector3d   M_bar;                      // 3x1
-	Eigen::Vector3d   last_angular_velocity;      // 3x1
-	Eigen::Vector3d   mat_sum;                    // 3x1
-	Eigen::Matrix3d   Y_diag;                     // 3x3
-	Eigen::Matrix3d   Y_diag_cl;                  // 3x3
-	Eigen::Matrix3d   Y_diag_cl_integral;         // 3x3
-	Eigen::Matrix3d   Y_diag_cl_integral_last;    // 3x3
-	Eigen::Matrix3d   y_diag_cl_lower_case;       // 3x3
-	Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>   mat_FIFO;
-
-	// for mass estimation
-	Eigen::Matrix3d   Y_m;                        // 3x3
-	Eigen::Vector3d   theta_m_hat;                // 3x1
-	Eigen::Vector3d   theta_m_hat_dot;            // 3x1
-
-	int index_m;
-	int full_m;
-	int ICL_N_m;
-	double  theta_m_hat_R;                        // 1x1
-	double  theta_m_hat_dot_R;                    // 1x1
-	double  mat_mass_now;                         // 1x1
-	double  mat_mass_sum;                         // 1x1
-	Eigen::Vector3d   Y_m_R;                      // 3x1
-	Eigen::Vector3d   Y_m_cl_R_dt;                // 3x1
-	Eigen::Vector3d   f_integral;                 // 3x1
-	Eigen::Vector3d   f_integral_last;            // 3x1
-	Eigen::Vector3d   F;                          // 3x1
-	Eigen::Vector3d   last_force_control_input;   // 3x1
-	Eigen::Vector3d   y_m_cl_integral;            // 3x1
-	Eigen::Vector3d   y_m_cl_integral_last;       // 3x1
-	Eigen::Vector3d   y_m_cl_lower_case;          // 3x1
-	Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>   mat_mass_FIFO;
-
-	double last_time;
-	double now_time;
-	std::chrono::time_point<std::chrono::system_clock> start, end;
 	double Psi;
-	double dt;
-
 	Eigen::Vector3d   angular_rate_error;
 	Eigen::Vector3d   angle_error;
 
@@ -136,19 +83,12 @@ public:
 	bool initialized_params_;
 	bool controller_active_;
 
-	Eigen::Vector3d normalized_attitude_gain_;
-	Eigen::Vector3d normalized_angular_rate_gain_;
-	Eigen::MatrixX4d angular_acc_to_rotor_velocities_;
 	Eigen::MatrixX4d moment_thrust_to_rotor_velocities_;
-
-	Eigen::Vector3d k_R;
-	Eigen::Vector3d k_omega;
 
 	mav_msgs::EigenTrajectoryPoint command_trajectory_;
 	EigenOdometry odometry_;
 
-
-	void ComputeDesiredMoment(const Eigen::Vector3d& acceleration, Eigen::Vector3d* moment_control_input);
+	void ComputeDesiredMoment(const Eigen::Vector3d& force_control_input, Eigen::Vector3d* moment_control_input);
 	void ComputeDesiredForce(Eigen::Vector3d* force_control_input, Eigen::Vector3d* position_error, Eigen::Vector3d* velocity_error);
 };
 }
