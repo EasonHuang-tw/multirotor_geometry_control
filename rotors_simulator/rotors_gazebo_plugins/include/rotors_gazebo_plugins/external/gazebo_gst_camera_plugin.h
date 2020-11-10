@@ -43,38 +43,53 @@ namespace gazebo
 /// ! rtph264depay ! avdec_h264 ! videoconvert ! autovideosink fps-update-interval=1000 sync=false
 class GAZEBO_VISIBLE GstCameraPlugin : public SensorPlugin
 {
-  public: GstCameraPlugin();
+public:
+	GstCameraPlugin();
 
-  public: virtual ~GstCameraPlugin();
+public:
+	virtual ~GstCameraPlugin();
 
-  public: virtual void Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf);
+public:
+	virtual void Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf);
 
-  public: virtual void OnNewFrame(const unsigned char *image,
-		unsigned int width, unsigned int height,
-		unsigned int depth, const std::string &format);
+public:
+	virtual void OnNewFrame(const unsigned char *image,
+	                        unsigned int width, unsigned int height,
+	                        unsigned int depth, const std::string &format);
 
-  public: void startGstThread();
-  public: void gstCallback(GstElement *appsrc);
+public:
+	void startGstThread();
+public:
+	void gstCallback(GstElement *appsrc);
 
-  protected: unsigned int width, height, depth;
-  float rate;
-  protected: std::string format;
+protected:
+	unsigned int width, height, depth;
+	float rate;
+protected:
+	std::string format;
 
-  protected: int udpPort;
+protected:
+	int udpPort;
 
-  protected: sensors::CameraSensorPtr parentSensor;
-  protected: rendering::CameraPtr camera;
+protected:
+	sensors::CameraSensorPtr parentSensor;
+protected:
+	rendering::CameraPtr camera;
 
-  private: event::ConnectionPtr newFrameConnection;
+private:
+	event::ConnectionPtr newFrameConnection;
 
-  private: transport::NodePtr node_handle_;
-  private: std::string namespace_;
-  private: const std::string topicName = "gst_video";
+private:
+	transport::NodePtr node_handle_;
+private:
+	std::string namespace_;
+private:
+	const std::string topicName = "gst_video";
 
-  GstBuffer *frameBuffer;
-  std::mutex frameBufferMutex;
-  GMainLoop *mainLoop;
-  GstClockTime gstTimestamp;
+	GstBuffer *frameBuffer;
+	std::mutex frameBufferMutex;
+	GMainLoop *mainLoop;
+	GstClockTime gstTimestamp;
 
 };
 

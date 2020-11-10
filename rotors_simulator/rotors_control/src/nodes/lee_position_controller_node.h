@@ -37,50 +37,52 @@
 #include "rotors_control/common.h"
 #include "rotors_control/lee_position_controller.h"
 
-namespace rotors_control {
+namespace rotors_control
+{
 
-class LeePositionControllerNode {
- public:
-  LeePositionControllerNode( const ros::NodeHandle& nh, const ros::NodeHandle& private_nh);
-  ~LeePositionControllerNode();
+class LeePositionControllerNode
+{
+public:
+	LeePositionControllerNode( const ros::NodeHandle& nh, const ros::NodeHandle& private_nh);
+	~LeePositionControllerNode();
 
-  void InitializeParams();
-  void Publish();
+	void InitializeParams();
+	void Publish();
 
- private:
-  ros::NodeHandle nh_;
-  ros::NodeHandle private_nh_;
+private:
+	ros::NodeHandle nh_;
+	ros::NodeHandle private_nh_;
 
-  LeePositionController lee_position_controller_;
+	LeePositionController lee_position_controller_;
 
-  std::string namespace_;
+	std::string namespace_;
 
-  // subscribers
-  ros::Subscriber cmd_trajectory_sub_;
-  ros::Subscriber cmd_multi_dof_joint_trajectory_sub_;
-  ros::Subscriber cmd_sub_;
-  ros::Subscriber odometry_sub_;
+	// subscribers
+	ros::Subscriber cmd_trajectory_sub_;
+	ros::Subscriber cmd_multi_dof_joint_trajectory_sub_;
+	ros::Subscriber cmd_sub_;
+	ros::Subscriber odometry_sub_;
 
-  ros::Publisher motor_velocity_reference_pub_;
-  ros::Publisher position_error_pub_;
-  ros::Publisher velocity_error_pub_;
-  ros::Publisher attitude_error_pub_;
-  ros::Publisher omega_error_pub_;
-  ros::Publisher error_pub_;
+	ros::Publisher motor_velocity_reference_pub_;
+	ros::Publisher position_error_pub_;
+	ros::Publisher velocity_error_pub_;
+	ros::Publisher attitude_error_pub_;
+	ros::Publisher omega_error_pub_;
+	ros::Publisher error_pub_;
 
-  mav_msgs::EigenTrajectoryPointDeque commands_;
-  std::deque<ros::Duration> command_waiting_times_;
-  ros::Timer command_timer_;
+	mav_msgs::EigenTrajectoryPointDeque commands_;
+	std::deque<ros::Duration> command_waiting_times_;
+	ros::Timer command_timer_;
 
-  void TimedCommandCallback(const ros::TimerEvent& e);
+	void TimedCommandCallback(const ros::TimerEvent& e);
 
-  void MultiDofJointTrajectoryCallback(
-      const trajectory_msgs::MultiDOFJointTrajectoryConstPtr& trajectory_reference_msg);
+	void MultiDofJointTrajectoryCallback(
+	        const trajectory_msgs::MultiDOFJointTrajectoryConstPtr& trajectory_reference_msg);
 
-  void CommandCallback(
-      const trajectory_msgs::MultiDOFJointTrajectoryPointConstPtr& cmd_msg);
+	void CommandCallback(
+	        const trajectory_msgs::MultiDOFJointTrajectoryPointConstPtr& cmd_msg);
 
-  void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
+	void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
 };
 }
 

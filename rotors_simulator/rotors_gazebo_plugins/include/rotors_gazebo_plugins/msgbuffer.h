@@ -25,7 +25,8 @@
 #include <cassert>
 #include "mavlink/v2.0/common/mavlink.h"
 
-namespace gazebo {
+namespace gazebo
+{
 /**
  * @brief Message buffer for internal use in libmavconn
  */
@@ -64,16 +65,19 @@ struct MsgBuffer {
 		memcpy(data, bytes, nbytes);
 	}
 
-	virtual ~MsgBuffer() {
+	virtual ~MsgBuffer()
+	{
 		pos = 0;
 		len = 0;
 	}
 
-	uint8_t *dpos() {
+	uint8_t *dpos()
+	{
 		return data + pos;
 	}
 
-	ssize_t nbytes() {
+	ssize_t nbytes()
+	{
 		return len - pos;
 	}
 };

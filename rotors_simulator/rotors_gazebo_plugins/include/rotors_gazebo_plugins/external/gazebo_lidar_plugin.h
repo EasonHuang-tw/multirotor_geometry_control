@@ -31,37 +31,42 @@
 
 namespace gazebo
 {
-  /// \brief    A Gazebo LIDAR plugin.
-  class GAZEBO_VISIBLE GazeboLidarPlugin : public SensorPlugin
-  {
-    /// \brief Constructor
-    public: GazeboLidarPlugin();
+/// \brief    A Gazebo LIDAR plugin.
+class GAZEBO_VISIBLE GazeboLidarPlugin : public SensorPlugin
+{
+	/// \brief Constructor
+public:
+	GazeboLidarPlugin();
 
-    /// \brief Destructor
-    public: virtual ~GazeboLidarPlugin();
+	/// \brief Destructor
+public:
+	virtual ~GazeboLidarPlugin();
 
-    /// \brief Update callback
-    public: virtual void OnNewLaserScans();
+	/// \brief Update callback
+public:
+	virtual void OnNewLaserScans();
 
-    /// \brief Load the plugin
-    /// \param take in SDF root element
-    public: void Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf);
+	/// \brief Load the plugin
+	/// \param take in SDF root element
+public:
+	void Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf);
 
-    /// \brief Pointer to parent
-    protected: physics::WorldPtr world;
+	/// \brief Pointer to parent
+protected:
+	physics::WorldPtr world;
 
-    /// \brief The parent sensor
-    private: 
-      sensors::RaySensorPtr parentSensor;
-      transport::NodePtr node_handle_;
-      transport::PublisherPtr lidar_pub_;
-      std::string namespace_;
+	/// \brief The parent sensor
+private:
+	sensors::RaySensorPtr parentSensor;
+	transport::NodePtr node_handle_;
+	transport::PublisherPtr lidar_pub_;
+	std::string namespace_;
 
 
-    /// \brief The connection tied to RayPlugin::OnNewLaserScans()
-    private: 
-      event::ConnectionPtr newLaserScansConnection;
-      lidar_msgs::msgs::lidar lidar_message;
-  };
+	/// \brief The connection tied to RayPlugin::OnNewLaserScans()
+private:
+	event::ConnectionPtr newLaserScansConnection;
+	lidar_msgs::msgs::lidar lidar_message;
+};
 }
 #endif

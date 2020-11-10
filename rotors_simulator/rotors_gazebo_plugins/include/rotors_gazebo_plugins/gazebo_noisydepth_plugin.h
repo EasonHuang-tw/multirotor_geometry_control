@@ -55,58 +55,60 @@
 
 #include <rotors_gazebo_plugins/depth_noise_model.hpp>
 
-namespace gazebo {
-class GazeboNoisyDepth : public DepthCameraPlugin, GazeboRosCameraUtils {
- public:
-  GazeboNoisyDepth();
+namespace gazebo
+{
+class GazeboNoisyDepth : public DepthCameraPlugin, GazeboRosCameraUtils
+{
+public:
+	GazeboNoisyDepth();
 
-  ~GazeboNoisyDepth();
+	~GazeboNoisyDepth();
 
-  /// \brief Load the plugin
-  /// \param take in SDF root element
-  virtual void Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf);
+	/// \brief Load the plugin
+	/// \param take in SDF root element
+	virtual void Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf);
 
-  /// \brief Advertise depth image
-  virtual void Advertise();
+	/// \brief Advertise depth image
+	virtual void Advertise();
 
-  virtual void OnNewDepthFrame(const float *_image, unsigned int _width,
-                               unsigned int _height, unsigned int _depth,
-                               const std::string &_format);
+	virtual void OnNewDepthFrame(const float *_image, unsigned int _width,
+	                             unsigned int _height, unsigned int _depth,
+	                             const std::string &_format);
 
- protected:
-  virtual void OnNewImageFrame(const unsigned char *_image, unsigned int _width,
-                               unsigned int _height, unsigned int _depth,
-                               const std::string &_format);
+protected:
+	virtual void OnNewImageFrame(const unsigned char *_image, unsigned int _width,
+	                             unsigned int _height, unsigned int _depth,
+	                             const std::string &_format);
 
- private:
-  void DepthImageConnect();
-  void DepthImageDisconnect();
-  void DepthInfoConnect();
-  void DepthInfoDisconnect();
-  void FillDepthImage(const float *_src);
-  bool FillDepthImageHelper(const uint32_t rows_arg,
-                            const uint32_t cols_arg,
-                            const uint32_t step_arg,
-                            const float *data_arg,
-                            sensor_msgs::Image *image_msg);
+private:
+	void DepthImageConnect();
+	void DepthImageDisconnect();
+	void DepthInfoConnect();
+	void DepthInfoDisconnect();
+	void FillDepthImage(const float *_src);
+	bool FillDepthImageHelper(const uint32_t rows_arg,
+	                          const uint32_t cols_arg,
+	                          const uint32_t step_arg,
+	                          const float *data_arg,
+	                          sensor_msgs::Image *image_msg);
 
-  virtual void PublishCameraInfo();
+	virtual void PublishCameraInfo();
 
-  event::ConnectionPtr load_connection_;
-  std::unique_ptr<DepthNoiseModel> noise_model;
+	event::ConnectionPtr load_connection_;
+	std::unique_ptr<DepthNoiseModel> noise_model;
 
-  ros::Publisher depth_image_pub_;
-  ros::Publisher depth_image_camera_info_pub_;
+	ros::Publisher depth_image_pub_;
+	ros::Publisher depth_image_camera_info_pub_;
 
-  int depth_image_connect_count_;
-  int depth_info_connect_count_;
+	int depth_image_connect_count_;
+	int depth_info_connect_count_;
 
-  std::string depth_image_topic_name_;
-  std::string depth_image_camera_info_topic_name_;
+	std::string depth_image_topic_name_;
+	std::string depth_image_camera_info_topic_name_;
 
-  common::Time depth_sensor_update_time_;
-  common::Time last_depth_image_camera_info_update_time_;
-  sensor_msgs::Image depth_image_msg_;
+	common::Time depth_sensor_update_time_;
+	common::Time last_depth_image_camera_info_update_time_;
+	sensor_msgs::Image depth_image_msg_;
 };
 }
 #endif  // ROTORS_GAZEBO_PLUGINS_GAZEBO_NOISYDEPTH_PLUGIN_H

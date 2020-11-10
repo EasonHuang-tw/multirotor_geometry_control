@@ -29,7 +29,8 @@
 #include "rotors_gazebo_plugins/common.h"
 #include "rotors_gazebo_plugins/sdf_api_wrapper.hpp"
 
-namespace gazebo {
+namespace gazebo
+{
 
 // Default magnetic field [Tesla] in NED frame, obtained from World Magnetic
 // Model: (http://www.ngdc.noaa.gov/geomag-web/#igrfwmm) for Zurich:
@@ -38,60 +39,61 @@ static constexpr double kDefaultRefMagNorth = 0.000021493;
 static constexpr double kDefaultRefMagEast = 0.000000815;
 static constexpr double kDefaultRefMagDown = 0.000042795;
 
-class GazeboMagnetometerPlugin : public ModelPlugin {
+class GazeboMagnetometerPlugin : public ModelPlugin
+{
 
- public:
-  typedef std::normal_distribution<> NormalDistribution;
-  typedef std::uniform_real_distribution<> UniformDistribution;
+public:
+	typedef std::normal_distribution<> NormalDistribution;
+	typedef std::uniform_real_distribution<> UniformDistribution;
 
-  GazeboMagnetometerPlugin();
-  virtual ~GazeboMagnetometerPlugin();
+	GazeboMagnetometerPlugin();
+	virtual ~GazeboMagnetometerPlugin();
 
- protected:
-  void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
-  void OnUpdate(const common::UpdateInfo&);
+protected:
+	void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
+	void OnUpdate(const common::UpdateInfo&);
 
- private:
+private:
 
-  /// \brief    Flag that is set to true once CreatePubsAndSubs() is called, used
-  ///           to prevent CreatePubsAndSubs() from be called on every OnUpdate().
-  bool pubs_and_subs_created_;
+	/// \brief    Flag that is set to true once CreatePubsAndSubs() is called, used
+	///           to prevent CreatePubsAndSubs() from be called on every OnUpdate().
+	bool pubs_and_subs_created_;
 
-  /// \brief    Creates all required publishers and subscribers, incl. routing of messages to/from ROS if required.
-  /// \details  Call this once the first time OnUpdate() is called (can't
-  ///           be called from Load() because there is no guarantee GazeboRosInterfacePlugin has
-  ///           has loaded and listening to ConnectGazeboToRosTopic and ConnectRosToGazeboTopic messages).
-  void CreatePubsAndSubs();
+	/// \brief    Creates all required publishers and subscribers, incl. routing of messages to/from ROS if required.
+	/// \details  Call this once the first time OnUpdate() is called (can't
+	///           be called from Load() because there is no guarantee GazeboRosInterfacePlugin has
+	///           has loaded and listening to ConnectGazeboToRosTopic and ConnectRosToGazeboTopic messages).
+	void CreatePubsAndSubs();
 
-  std::string namespace_;
-  std::string magnetometer_topic_;
-  gazebo::transport::NodePtr node_handle_;
-  gazebo::transport::PublisherPtr magnetometer_pub_;
-  std::string frame_id_;
+	std::string namespace_;
+	std::string magnetometer_topic_;
+	gazebo::transport::NodePtr node_handle_;
+	gazebo::transport::PublisherPtr magnetometer_pub_;
+	std::string frame_id_;
 
-  /// \brief    Pointer to the world.
-  physics::WorldPtr world_;
+	/// \brief    Pointer to the world.
+	physics::WorldPtr world_;
 
-  /// \brief    Pointer to the model.
-  physics::ModelPtr model_;
+	/// \brief    Pointer to the model.
+	physics::ModelPtr model_;
 
-  /// \brief    Pointer to the link.
-  physics::LinkPtr link_;
+	/// \brief    Pointer to the link.
+	physics::LinkPtr link_;
 
-  //// \brief    Pointer to the update event connection.
-  event::ConnectionPtr updateConnection_;
+	//// \brief    Pointer to the update event connection.
+	event::ConnectionPtr updateConnection_;
 
-  ignition::math::Vector3d mag_W_;
+	ignition::math::Vector3d mag_W_;
 
-  /// \brief    Magnetic field message.
-  /// \details  Reused message object which is defined here to reduce
-  ///           memory allocation.
-  gz_sensor_msgs::MagneticField mag_message_;
+	/// \brief    Magnetic field message.
+	/// \details  Reused message object which is defined here to reduce
+	///           memory allocation.
+	gz_sensor_msgs::MagneticField mag_message_;
 
-  NormalDistribution noise_n_[3];
+	NormalDistribution noise_n_[3];
 
-  std::random_device random_device_;
-  std::mt19937 random_generator_;
+	std::random_device random_device_;
+	std::mt19937 random_generator_;
 };
 
 } // namespace gazebo

@@ -42,42 +42,42 @@ using namespace std;
 
 namespace gazebo
 {
-  class GAZEBO_VISIBLE OpticalFlowPlugin : public SensorPlugin
-  {
-    public:
-      OpticalFlowPlugin();
-      virtual ~OpticalFlowPlugin();
-      virtual void Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf);
-      virtual void OnNewFrame(const unsigned char *_image,
-                              unsigned int _width, unsigned int _height,
-                              unsigned int _depth, const std::string &_format);
+class GAZEBO_VISIBLE OpticalFlowPlugin : public SensorPlugin
+{
+public:
+	OpticalFlowPlugin();
+	virtual ~OpticalFlowPlugin();
+	virtual void Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf);
+	virtual void OnNewFrame(const unsigned char *_image,
+	                        unsigned int _width, unsigned int _height,
+	                        unsigned int _depth, const std::string &_format);
 
-    protected:
-      unsigned int width, height, depth;
-      std::string format;
-      sensors::CameraSensorPtr parentSensor;
-      rendering::CameraPtr camera;
+protected:
+	unsigned int width, height, depth;
+	std::string format;
+	sensors::CameraSensorPtr parentSensor;
+	rendering::CameraPtr camera;
 
-    private:
-      event::ConnectionPtr newFrameConnection;
-      Mat old_gray;
-      Mat frame_gray;
-      transport::PublisherPtr opticalFlow_pub_;
-      transport::NodePtr node_handle_;
-      opticalFlow_msgs::msgs::opticalFlow opticalFlow_message;
-      std::string namespace_;
-      boost::timer::cpu_timer timer_;
-      OpticalFlowOpenCV *_optical_flow;
-      // OpticalFlowPX4 *_optical_flow;
+private:
+	event::ConnectionPtr newFrameConnection;
+	Mat old_gray;
+	Mat frame_gray;
+	transport::PublisherPtr opticalFlow_pub_;
+	transport::NodePtr node_handle_;
+	opticalFlow_msgs::msgs::opticalFlow opticalFlow_message;
+	std::string namespace_;
+	boost::timer::cpu_timer timer_;
+	OpticalFlowOpenCV *_optical_flow;
+	// OpticalFlowPX4 *_optical_flow;
 
-      float hfov;
-      float rate;
-      int dt_us;
-      float focal_length;
-      double first_frame_time;
-      double frame_time;
-      double old_frame_time;
-      uint32_t frame_time_us;
-  };
+	float hfov;
+	float rate;
+	int dt_us;
+	float focal_length;
+	double first_frame_time;
+	double frame_time;
+	double old_frame_time;
+	uint32_t frame_time_us;
+};
 }
 #endif
