@@ -23,7 +23,8 @@
 
 #include <mav_msgs/common.h>
 
-namespace mav_msgs {
+namespace mav_msgs
+{
 
 const double kZurichLatitude = 0.8267;
 const double kZurichHeight = 405.94;

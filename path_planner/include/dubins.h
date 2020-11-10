@@ -42,7 +42,8 @@
 #define EDUBBADRHO    (3)   // the rho value is invalid
 #define EDUBNOPATH    (4)   // no connection between configurations with this word
 
-namespace HybridAStar {
+namespace HybridAStar
+{
 
 // The various types of solvers for each of the path types
 typedef int (*DubinsWord)(double, double, double, double* );
@@ -50,12 +51,11 @@ typedef int (*DubinsWord)(double, double, double, double* );
 // A complete list of the possible solvers that could give optimal paths
 extern DubinsWord dubins_words[];
 
-typedef struct
-{
-    double qi[3];       // the initial configuration
-    double param[3];    // the lengths of the three segments
-    double rho;         // model forward velocity / model angular velocity
-    int type;           // path type. one of LSL, LSR, ...
+typedef struct {
+	double qi[3];       // the initial configuration
+	double param[3];    // the lengths of the three segments
+	double rho;         // model forward velocity / model angular velocity
+	int type;           // path type. one of LSL, LSR, ...
 } DubinsPath;
 
 /**

@@ -30,12 +30,12 @@
 
 #ifndef NO_ANSI99_COMPLEX
 typedef union {
-  double d;
-  int_t i;
+	double d;
+	int_t i;
 #ifndef _MSC_VER
-  double complex z;
+	double complex z;
 #else
-  _Dcomplex z;
+	_Dcomplex z;
 #endif
 } number;
 #endif

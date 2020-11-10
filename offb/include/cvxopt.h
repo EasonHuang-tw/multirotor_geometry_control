@@ -27,7 +27,7 @@
 
 /* ANSI99 complex is disabled during build of CHOLMOD */
 
-#if !defined(NO_ANSI99_COMPLEX) 
+#if !defined(NO_ANSI99_COMPLEX)
 #include "complex.h"
 #if !defined(_MSC_VER)
 #define MAT_BUFZ(O)  ((double complex *)((matrix *)O)->buffer)
@@ -46,26 +46,26 @@
 #define int_t     Py_ssize_t
 
 typedef struct {
-  PyObject_HEAD
-  void *buffer;          /* in column-major-mode array of type 'id' */
-  int nrows, ncols;      /* number of rows and columns */
-  int   id;              /* DOUBLE, INT, COMPLEX */
-  int_t shape[2];
-  int_t strides[2];
-  int_t ob_exports;
+	PyObject_HEAD
+	void *buffer;          /* in column-major-mode array of type 'id' */
+	int nrows, ncols;      /* number of rows and columns */
+	int   id;              /* DOUBLE, INT, COMPLEX */
+	int_t shape[2];
+	int_t strides[2];
+	int_t ob_exports;
 } matrix;
 
 typedef struct {
-  void  *values;      /* value list */
-  int_t *colptr;      /* column pointer list */
-  int_t *rowind;      /* row index list */
-  int_t nrows, ncols; /* number of rows and columns */
-  int   id;           /* DOUBLE, COMPLEX */
+	void  *values;      /* value list */
+	int_t *colptr;      /* column pointer list */
+	int_t *rowind;      /* row index list */
+	int_t nrows, ncols; /* number of rows and columns */
+	int   id;           /* DOUBLE, COMPLEX */
 } ccs;
 
 typedef struct {
-  PyObject_HEAD
-  ccs *obj;
+	PyObject_HEAD
+	ccs *obj;
 } spmatrix;
 
 #ifdef BASE_MODULE
@@ -94,22 +94,22 @@ static void **cvxopt_API;
 static int
 import_cvxopt(void)
 {
-  PyObject *module = PyImport_ImportModule("cvxopt.base");
+	PyObject *module = PyImport_ImportModule("cvxopt.base");
 
-  if (module != NULL) {
-    PyObject *c_api_object = PyObject_GetAttrString(module, "_C_API");
+	if (module != NULL) {
+		PyObject *c_api_object = PyObject_GetAttrString(module, "_C_API");
 #if PY_MAJOR_VERSION >= 3
-    if (!c_api_object || !PyCapsule_IsValid(c_api_object, "base_API"))
-        return -1;
-    cvxopt_API = (void **) PyCapsule_GetPointer(c_api_object, "base_API");
+		if (!c_api_object || !PyCapsule_IsValid(c_api_object, "base_API"))
+			return -1;
+		cvxopt_API = (void **) PyCapsule_GetPointer(c_api_object, "base_API");
 #else
-    if (!c_api_object || !(PyCObject_Check(c_api_object)))
-        return -1;
-    cvxopt_API = (void **) PyCObject_AsVoidPtr(c_api_object);
+		if (!c_api_object || !(PyCObject_Check(c_api_object)))
+			return -1;
+		cvxopt_API = (void **) PyCObject_AsVoidPtr(c_api_object);
 #endif
-    Py_DECREF(c_api_object);
-  }
-  return 0;
+		Py_DECREF(c_api_object);
+	}
+	return 0;
 }
 
 #endif
