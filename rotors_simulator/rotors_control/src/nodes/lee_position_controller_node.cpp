@@ -27,7 +27,6 @@
 
 namespace rotors_control
 {
-
 LeePositionControllerNode::LeePositionControllerNode(const
                 ros::NodeHandle& nh, const ros::NodeHandle& private_nh)
 	:nh_(nh),
@@ -49,13 +48,7 @@ LeePositionControllerNode::LeePositionControllerNode(const
 	motor_velocity_reference_pub_ = nh_.advertise<mav_msgs::Actuators>(
 	                                        mav_msgs::default_topics::COMMAND_ACTUATORS, 1);
 
-	theta_hat_pub_ = nh_.advertise<geometry_msgs::Point>("/theta_hat", 1);
-
-	theta_m_hat_pub_ = nh_.advertise<geometry_msgs::Point>("/theta_m_hat", 1);
-
 	error_pub_ = nh_.advertise<nav_msgs::Odometry>("/error", 1);
-
-	//position_error_pub_ = nh_.advertise<geometry_msgs::Point>(position)
 
 	command_timer_ = nh_.createTimer(ros::Duration(0), &LeePositionControllerNode::TimedCommandCallback, this,
 	                                 true, false);
@@ -65,7 +58,6 @@ LeePositionControllerNode::~LeePositionControllerNode() { }
 
 void LeePositionControllerNode::InitializeParams()
 {
-
 	// Read parameters from rosparam.
 	GetRosParameter(private_nh_, "position_gain/x",
 	                lee_position_controller_.controller_parameters_.position_gain_.x(),
@@ -169,7 +161,6 @@ void LeePositionControllerNode::MultiDofJointTrajectoryCallback(
 
 void LeePositionControllerNode::TimedCommandCallback(const ros::TimerEvent& e)
 {
-
 	if(commands_.empty()) {
 		ROS_WARN("Commands empty, this should not happen here");
 		return;
@@ -188,7 +179,6 @@ void LeePositionControllerNode::TimedCommandCallback(const ros::TimerEvent& e)
 
 void LeePositionControllerNode::OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg)
 {
-
 	ROS_INFO_ONCE("LeePositionController got first odometry message.");
 
 	// put sensor data from gazebo to lee_position_controller_
@@ -199,10 +189,8 @@ void LeePositionControllerNode::OdometryCallback(const nav_msgs::OdometryConstPt
 
 	// CalculateRotorVelocities() is called to calculate rotor velocities and put into ref_rotor_velocities
 	Eigen::VectorXd ref_rotor_velocities;
-	geometry_msgs::Point theta_estimated;
-	geometry_msgs::Point theta_m_estimated;
 	nav_msgs::Odometry error;
-	lee_position_controller_.CalculateRotorVelocities(&ref_rotor_velocities, &theta_estimated, &theta_m_estimated, &error);
+	lee_position_controller_.CalculateRotorVelocities(&ref_rotor_velocities, &error);
 
 	// Todo(ffurrer): Do this in the conversions header.
 	mav_msgs::ActuatorsPtr actuator_msg(new mav_msgs::Actuators);
@@ -213,10 +201,8 @@ void LeePositionControllerNode::OdometryCallback(const nav_msgs::OdometryConstPt
 	actuator_msg->header.stamp = odometry_msg->header.stamp;
 
 	motor_velocity_reference_pub_.publish(actuator_msg);
-	theta_hat_pub_.publish(theta_estimated);
-	theta_m_hat_pub_.publish(theta_m_estimated);
-	error_pub_.publish(error);
 
+	error_pub_.publish(error);
 }
 
 }

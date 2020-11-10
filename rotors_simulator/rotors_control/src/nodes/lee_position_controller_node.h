@@ -62,9 +62,6 @@ class LeePositionControllerNode {
   ros::Subscriber odometry_sub_;
 
   ros::Publisher motor_velocity_reference_pub_;
-  ros::Publisher theta_hat_pub_;
-  ros::Publisher theta_m_hat_pub_;
-
   ros::Publisher position_error_pub_;
   ros::Publisher velocity_error_pub_;
   ros::Publisher attitude_error_pub_;

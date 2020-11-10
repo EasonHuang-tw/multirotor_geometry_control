@@ -45,7 +45,7 @@ void LeePositionController::InitializeParameters()
 	initialized_params_ = true;
 }
 
-void LeePositionController::CalculateRotorVelocities(Eigen::VectorXd* rotor_velocities, geometry_msgs::Point* theta_esti, geometry_msgs::Point* theta_m_esti, nav_msgs::Odometry* error)
+void LeePositionController::CalculateRotorVelocities(Eigen::VectorXd* rotor_velocities, nav_msgs::Odometry* error)
 {
 	assert(rotor_velocities);
 	assert(initialized_params_);
@@ -68,14 +68,6 @@ void LeePositionController::CalculateRotorVelocities(Eigen::VectorXd* rotor_velo
 	Eigen::Vector3d angular_acceleration;
 	Eigen::Vector3d moment_control_input;
 	ComputeDesiredMoment(force_control_input, &moment_control_input);
-
-	(theta_esti->x) = theta_diag_hat(0);
-	(theta_esti->y) = theta_diag_hat(1);
-	(theta_esti->z) = theta_diag_hat(2);
-
-	(theta_m_esti->x) = theta_m_hat_R;
-	(theta_m_esti->y) = theta_m_hat_R;
-	(theta_m_esti->z) = theta_m_hat_R;
 
 	error->pose.pose.position.x = position_error(0);
 	error->pose.pose.position.y = position_error(1);
