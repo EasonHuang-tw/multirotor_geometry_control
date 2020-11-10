@@ -40,7 +40,8 @@ void LeePositionController::InitializeParameters()
 {
 	ROS_INFO("initialize");
 	calculateAllocationMatrix(vehicle_parameters_.rotor_configuration_, &(controller_parameters_.allocation_matrix_));
-	angular_acc_to_rotor_velocities_.resize(vehicle_parameters_.rotor_configuration_.rotors.size(), 4);
+	moment_thrust_to_rotor_velocities_.resize(vehicle_parameters_.rotor_configuration_.rotors.size(), 4);
+	moment_thrust_to_rotor_velocities_ = controller_parameters_.allocation_matrix_.transpose()* (controller_parameters_.allocation_matrix_* controller_parameters_.allocation_matrix_.transpose()).inverse();
 
 	initialized_params_ = true;
 }
@@ -92,7 +93,6 @@ void LeePositionController::CalculateRotorVelocities(Eigen::VectorXd* rotor_velo
 	moment_thrust.block<3, 1>(0, 0) = moment_control_input;
 	moment_thrust(3) = thrust;
 
-	moment_thrust_to_rotor_velocities_ = controller_parameters_.allocation_matrix_.transpose()* (controller_parameters_.allocation_matrix_* controller_parameters_.allocation_matrix_.transpose()).inverse();
 	*rotor_velocities = moment_thrust_to_rotor_velocities_ * moment_thrust;
 	*rotor_velocities = rotor_velocities->cwiseMax(Eigen::VectorXd::Zero(rotor_velocities->rows()));
 	*rotor_velocities = rotor_velocities->cwiseSqrt();
