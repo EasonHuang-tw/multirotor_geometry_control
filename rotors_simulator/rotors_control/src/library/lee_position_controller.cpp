@@ -66,7 +66,6 @@ void LeePositionController::CalculateRotorVelocities(Eigen::VectorXd* rotor_velo
 	ComputeDesiredForce(&force_control_input, &position_error, &velocity_error);
 
 	// compute angular acceleration and moment control input
-	Eigen::Vector3d angular_acceleration;
 	Eigen::Vector3d moment_control_input;
 	ComputeDesiredMoment(force_control_input, &moment_control_input);
 
