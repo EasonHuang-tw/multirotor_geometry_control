@@ -179,6 +179,10 @@ void LeePositionController::ComputeDesiredMoment(const Eigen::Vector3d& force_co
 	angular_rate_des[2] = command_trajectory_.getYawRate();
 	angular_rate_error = odometry_.angular_velocity - R.transpose() * R_des * angular_rate_des;
 
+	// Psi
+	Eigen::Matrix3d I_RdtR = Eigen::Matrix3d::Identity(3, 3) - (R_des.transpose())*R;
+	Psi = 0.5*(I_RdtR.trace());
+
 	*moment_control_input = - angle_error.cwiseProduct(controller_parameters_.attitude_gain_)
 	                        - angular_rate_error.cwiseProduct(controller_parameters_.angular_rate_gain_)
 	                        + odometry_.angular_velocity.cross(vehicle_parameters_.inertia_*odometry_.angular_velocity);
