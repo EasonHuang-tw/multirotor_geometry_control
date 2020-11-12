@@ -75,6 +75,8 @@ public:
 	VehicleParameters vehicle_parameters_;
 
 	double Psi;
+	Eigen::Vector3d   position_error;
+	Eigen::Vector3d   velocity_error;
 	Eigen::Vector3d   angular_rate_error;
 	Eigen::Vector3d   angle_error;
 
@@ -88,8 +90,8 @@ public:
 	mav_msgs::EigenTrajectoryPoint command_trajectory_;
 	EigenOdometry odometry_;
 
+	void ComputeDesiredForce(Eigen::Vector3d* force_control_input);
 	void ComputeDesiredMoment(const Eigen::Vector3d& force_control_input, Eigen::Vector3d* moment_control_input);
-	void ComputeDesiredForce(Eigen::Vector3d* force_control_input, Eigen::Vector3d* position_error, Eigen::Vector3d* velocity_error);
 };
 }
 

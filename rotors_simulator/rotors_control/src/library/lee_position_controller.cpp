@@ -58,12 +58,9 @@ void LeePositionController::CalculateRotorVelocities(Eigen::VectorXd* rotor_velo
 		return;
 	}
 
-	Eigen::Vector3d position_error;
-	Eigen::Vector3d velocity_error;
-
 	// compute b_3_d and the acceleration
 	Eigen::Vector3d force_control_input;
-	ComputeDesiredForce(&force_control_input, &position_error, &velocity_error);
+	ComputeDesiredForce(&force_control_input);
 
 	// compute angular acceleration and moment control input
 	Eigen::Vector3d moment_control_input;
@@ -108,27 +105,25 @@ void LeePositionController::SetTrajectoryPoint(const mav_msgs::EigenTrajectoryPo
 	controller_active_ = true;
 }
 
-void LeePositionController::ComputeDesiredForce(Eigen::Vector3d* force_control_input, Eigen::Vector3d* position_error, Eigen::Vector3d* velocity_error)
+void LeePositionController::ComputeDesiredForce(Eigen::Vector3d* force_control_input)
 {
 	assert(force_control_input);
 	// this function is used to compute b_3_d in paper
-
 	Eigen::Vector3d e_3(Eigen::Vector3d::UnitZ());
 
 	// calculate position error ([3, 1] vector)
-	*position_error = odometry_.position - command_trajectory_.position_W;
+	position_error = odometry_.position - command_trajectory_.position_W;
 
 	// Transform velocity to world frame.
 	// quaternion -> rotation matrix
 	// compute velocity error in world frame
 	const Eigen::Matrix3d R_W_I = odometry_.orientation.toRotationMatrix();
 	Eigen::Vector3d velocity_W =  R_W_I * odometry_.velocity;
-	*velocity_error = velocity_W - command_trajectory_.velocity_W;
+	velocity_error = velocity_W - command_trajectory_.velocity_W;
 
 	//connect the desired force with the acceleration command
-
-	*force_control_input = (position_error->cwiseProduct(controller_parameters_.position_gain_)
-	                        + velocity_error->cwiseProduct(controller_parameters_.velocity_gain_))
+	*force_control_input = (position_error.cwiseProduct(controller_parameters_.position_gain_)
+	                        + velocity_error.cwiseProduct(controller_parameters_.velocity_gain_))
 	                       - vehicle_parameters_.mass_ * vehicle_parameters_.gravity_ * e_3
 	                       - vehicle_parameters_.mass_ * command_trajectory_.acceleration_W;
 }
