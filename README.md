@@ -9,14 +9,14 @@
 * Gazebo 9 simulator
 
 ```
-sudo apt-get install ros-kinetic-joy 
-sudo apt-get install ros-kinetic-octomap-ros 
-sudo apt-get install ros-kinetic-mavlink 
+sudo apt-get install ros-melodic-joy
+sudo apt-get install ros-melodic-octomap-ros
+sudo apt-get install ros-melodic-mavlink
 sudo apt-get install python-wstool
-sudo apt-get install python-catkin-tools 
-sudo apt-get install protobuf-compiler 
-sudo apt-get install libgoogle-glog-dev 
-sudo apt-get install ros-kinetic-control-toolbox
+sudo apt-get install python-catkin-tools
+sudo apt-get install protobuf-compiler
+sudo apt-get install libgoogle-glog-dev
+sudo apt-get install ros-melodic-control-toolbox
 ```
 
 ## Usage
