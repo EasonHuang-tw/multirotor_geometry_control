@@ -197,4 +197,31 @@
     <origin xyz="${cos30*arm_length} -${sin30*arm_length} ${rotor_offset_top}" rpy="0 0 0" />
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
+
+
+<joint name="mass_joint" type="fixed">
+      <parent link="${namespace}/base_link"/>
+      <child link="mass_piece" />
+		<!--
+		<origin xyz="0 0.1 ${rotor_offset_top}" rpy="0 0 0" />
+		-->
+		<origin xyz="0.5 0.5 0.25" rpy="0 0 0" />
+</joint>
+<link name="mass_piece">
+	<inertial>
+        <mass value="0.1" />  <!-- [kg] -->
+    <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+	</inertial>
+    <visual>
+        <geometry>
+            <cylinder radius="0.1" length="0.1"/>
+        </geometry>
+    </visual>
+    <collision>
+        <geometry>
+            <cylinder radius="0.1" length="0.1"/>
+        </geometry>
+    </collision>
+</link>
+
 </robot>
