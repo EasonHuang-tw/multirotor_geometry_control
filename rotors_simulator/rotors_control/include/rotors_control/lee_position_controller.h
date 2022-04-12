@@ -8,8 +8,7 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+
 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,9 +26,28 @@
 #include <list>
 #include <ctime>
 #include <cstdlib>
+#include <queue>
 #include <chrono>
 #include "rotors_control/common.h"
 #include "rotors_control/parameters.h"
+#include <random>
+
+#define CONTROLLER_USE_ORIGIN 0
+#define CONTROLLER_USE_ADAPTIVE 1
+#define CONTROLLER_USE_ICL 2
+#define CONTROLLER_USE CONTROLLER_USE_ICL
+
+#define ESTIMATER_USE_NONE 0
+#define ESTIMATER_USE_KF 1
+#define ESTIMATER_USE = ESTIMATER_USE_KF
+
+#define ICL_INTERGAL_TIMES 10
+#define ICL_N 20
+struct Sigma_array{		
+    double y;
+    Eigen::Vector3d y_omega;
+    Eigen::Vector3d M_hat;
+};
 
 namespace rotors_control
 {
@@ -67,7 +85,7 @@ public:
 	LeePositionController();
 	~LeePositionController();
 	void InitializeParameters();
-	void CalculateRotorVelocities(Eigen::VectorXd* rotor_velocities, nav_msgs::Odometry* error);
+	void CalculateRotorVelocities(Eigen::VectorXd* rotor_velocities, nav_msgs::Odometry* error,double dt);
 	void SetOdometry(const EigenOdometry& odometry);
 	void SetTrajectoryPoint(const mav_msgs::EigenTrajectoryPoint& command_trajectory);
 
@@ -80,6 +98,39 @@ public:
 	Eigen::Vector3d   angular_rate_error;
 	Eigen::Vector3d   angle_error;
 
+	//ICL theta (y,-x,0)
+	double last;
+	Eigen::Vector3d   adaptive_ICL_theta_;
+
+	//force & moment
+	Eigen::Vector4d moment_thrust_;
+	
+	//adaptive parameters
+	const double adaptive_gamma = 0.0002;
+	const double adaptive_c2 = 1;
+	
+	//ICL parameters
+	unsigned int ICL_flag;
+	const double k_icl = 0.005;
+    
+	//ICL integration and arrays    
+    double y=0;
+    Eigen::Vector3d y_omega = Eigen::Vector3d::Zero();
+    Eigen::Vector3d M_hat = Eigen::Vector3d::Zero();
+        
+    std::queue<double> Y_array;
+    std::queue<Eigen::Vector3d> Y_omega_array;
+    std::queue<Eigen::Vector3d> M_array;
+    std::queue<Eigen::Vector3d> W_array;
+
+	//sigma
+	Sigma_array sigma_array[ICL_N]; 
+
+	
+	//random
+	std::default_random_engine generator;
+	std::normal_distribution<double> distribution;
+
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 	bool initialized_params_;
@@ -91,7 +142,7 @@ public:
 	EigenOdometry odometry_;
 
 	void ComputeDesiredForce(Eigen::Vector3d* force_control_input);
-	void ComputeDesiredMoment(const Eigen::Vector3d& force_control_input, Eigen::Vector3d* moment_control_input);
+	void ComputeDesiredMoment(const Eigen::Vector3d& force_control_input, Eigen::Vector3d* moment_control_input,double dt);
 };
 }
 

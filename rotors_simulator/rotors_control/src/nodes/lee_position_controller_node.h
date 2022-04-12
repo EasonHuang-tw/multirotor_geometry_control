@@ -26,6 +26,7 @@
 #include <stdio.h>
 
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Vector3.h>
 #include <mav_msgs/Actuators.h>
 #include <mav_msgs/AttitudeThrust.h>
 #include <mav_msgs/eigen_mav_msgs.h>
@@ -37,6 +38,7 @@
 #include "rotors_control/common.h"
 #include "rotors_control/lee_position_controller.h"
 
+#include "rotors_estimation/kalmen_filter.h"
 namespace rotors_control
 {
 
@@ -50,11 +52,13 @@ public:
 	void Publish();
 
 private:
+	double last_time;
 	ros::NodeHandle nh_;
 	ros::NodeHandle private_nh_;
 
 	LeePositionController lee_position_controller_;
-
+	KalmenFilterEstimation kalmen_filter_estimation_;
+	Eigen::VectorXd kf_states;
 	std::string namespace_;
 
 	// subscribers
@@ -69,6 +73,8 @@ private:
 	ros::Publisher attitude_error_pub_;
 	ros::Publisher omega_error_pub_;
 	ros::Publisher error_pub_;
+	ros::Publisher theta_pub_;
+	ros::Publisher states_pub_;
 
 	mav_msgs::EigenTrajectoryPointDeque commands_;
 	std::deque<ros::Duration> command_waiting_times_;

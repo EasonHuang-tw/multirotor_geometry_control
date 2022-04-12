@@ -23,6 +23,7 @@
 #include <ctime>
 #include <cstdlib>
 #include <chrono>
+#include <iostream>
 
 namespace rotors_control
 {
@@ -31,6 +32,22 @@ LeePositionController::LeePositionController()
 	: initialized_params_(false),
 	  controller_active_(false)
 {
+	//initiailize adaptive and ICL parameters
+	adaptive_ICL_theta_ = Eigen::Vector3d::Zero();
+	ICL_flag = 0 ;
+	for(int i = 0 ; i< ICL_INTERGAL_TIMES ; i++){
+		Y_array.push(0);
+		Y_omega_array.push(Eigen::Vector3d::Zero());
+		M_array.push(Eigen::Vector3d::Zero());
+		W_array.push(Eigen::Vector3d::Zero());
+	}
+	for(int i = 0 ; i< ICL_N ; i++){
+		sigma_array[i].y = 0;
+		sigma_array[i].y_omega = Eigen::Vector3d::Zero();
+		sigma_array[i].M_hat = Eigen::Vector3d::Zero();
+	}
+
+	distribution = 	std::normal_distribution<double>(0.0,0.5);
 	InitializeParameters();
 }
 
@@ -46,8 +63,14 @@ void LeePositionController::InitializeParameters()
 	initialized_params_ = true;
 }
 
-void LeePositionController::CalculateRotorVelocities(Eigen::VectorXd* rotor_velocities, nav_msgs::Odometry* error)
+void LeePositionController::CalculateRotorVelocities(Eigen::VectorXd* rotor_velocities, nav_msgs::Odometry* error,double dt)
 {
+		/*
+	double now = ros::Time::now().toNSec();
+
+	std::cout <<1/(now - last) <<std::endl;
+	last = now;
+	*/
 	assert(rotor_velocities);
 	assert(initialized_params_);
 
@@ -64,7 +87,7 @@ void LeePositionController::CalculateRotorVelocities(Eigen::VectorXd* rotor_velo
 
 	// compute angular acceleration and moment control input
 	Eigen::Vector3d moment_control_input;
-	ComputeDesiredMoment(force_control_input, &moment_control_input);
+	ComputeDesiredMoment(force_control_input, &moment_control_input ,dt);
 
 	error->pose.pose.position.x = position_error(0);
 	error->pose.pose.position.y = position_error(1);
@@ -85,11 +108,10 @@ void LeePositionController::CalculateRotorVelocities(Eigen::VectorXd* rotor_velo
 
 	// this block use moment control input to compute the rotor velocities of every rotor
 	// [4, 1] vector for moment and thrust
-	Eigen::Vector4d moment_thrust;
-	moment_thrust.block<3, 1>(0, 0) = moment_control_input;
-	moment_thrust(3) = thrust;
+	moment_thrust_.block<3, 1>(0, 0) = moment_control_input;
+	moment_thrust_(3) = thrust;
 
-	*rotor_velocities = moment_thrust_to_rotor_velocities_ * moment_thrust;
+	*rotor_velocities = moment_thrust_to_rotor_velocities_ * moment_thrust_;
 	*rotor_velocities = rotor_velocities->cwiseMax(Eigen::VectorXd::Zero(rotor_velocities->rows()));
 	*rotor_velocities = rotor_velocities->cwiseSqrt();
 }
@@ -131,13 +153,32 @@ void LeePositionController::ComputeDesiredForce(Eigen::Vector3d* force_control_i
 // Implementation from the T. Lee et al. paper
 // Control of complex maneuvers for a quadrotor UAV using geometric methods on SE(3)
 void LeePositionController::ComputeDesiredMoment(const Eigen::Vector3d& force_control_input,
-                Eigen::Vector3d* moment_control_input)
+                Eigen::Vector3d* moment_control_input,double dt)
 {
 	assert(moment_control_input);
 
-	// quaternion -> rotation matrix
-	Eigen::Matrix3d R = odometry_.orientation.toRotationMatrix();
+	//add noise
+	
 
+/*	
+	double random_number;
+	for(int i = 0 ;i<3;i++){
+		random_number = distribution(generator);
+		odometry_.angular_velocity(i) = odometry_.angular_velocity(i)+random_number;
+	}
+*/
+	Eigen::Matrix3d R = odometry_.orientation.toRotationMatrix();
+	
+	// create random 
+	Eigen::AngleAxisd rollAngle(distribution(generator), Eigen::Vector3d::UnitZ());
+	Eigen::AngleAxisd yawAngle(distribution(generator), Eigen::Vector3d::UnitY());
+	Eigen::AngleAxisd pitchAngle(distribution(generator), Eigen::Vector3d::UnitX());
+
+	Eigen::Quaternion<double> q = rollAngle * yawAngle * pitchAngle;
+	Eigen::Matrix3d rotationMatrix = q.matrix();
+
+	//R = R* rotationMatrix;
+	
 	// Get the desired rotation matrix.
 	// b_1_d is the time derivative of desired trajectory
 	Eigen::Vector3d b1_des;
@@ -177,9 +218,95 @@ void LeePositionController::ComputeDesiredMoment(const Eigen::Vector3d& force_co
 	// Psi
 	Eigen::Matrix3d I_RdtR = Eigen::Matrix3d::Identity(3, 3) - (R_des.transpose())*R;
 	Psi = 0.5*(I_RdtR.trace());
+	//Eigen::Vector3d theta;
+	//theta << 0,-0.0248,0;
+	double thrust = -force_control_input.dot(odometry_.orientation.toRotationMatrix().col(2));
+	std::cout << "thrust: " << thrust << std::endl ;
 
 	*moment_control_input = - angle_error.cwiseProduct(controller_parameters_.attitude_gain_)
 	                        - angular_rate_error.cwiseProduct(controller_parameters_.angular_rate_gain_)
-	                        + odometry_.angular_velocity.cross(vehicle_parameters_.inertia_*odometry_.angular_velocity);
+	                        + odometry_.angular_velocity.cross(vehicle_parameters_.inertia_*odometry_.angular_velocity)
+							+ thrust*adaptive_ICL_theta_;
+	//adaptive
+#if CONTROLLER_USE == CONTROLLER_USE_ADAPTIVE
+	Eigen::Vector3d theta_hat_dot = -adaptive_gamma*thrust*(angular_rate_error*adaptive_c2 + angle_error);
+	adaptive_ICL_theta_ += theta_hat_dot;
+	adaptive_ICL_theta_(2) = 0;
+	std::cout<<"r_y:"<<adaptive_ICL_theta_(0)<<"\t";
+	std::cout<<"-r_x:"<<adaptive_ICL_theta_(1)<<"\t";
+	std::cout<<"r_z:"<<adaptive_ICL_theta_(2)<<std::endl;
+
+	//ICL
+#elif CONTROLLER_USE == CONTROLLER_USE_ICL
+	Eigen::Matrix<double,3,3> Y_omega;
+	Eigen::Vector3d Y_omega_J;
+	Eigen::Vector3d last_angular_velocity = W_array.front();
+	Eigen::Vector3d theta_hat_dot;
+	Y_omega <<0,-odometry_.angular_velocity(1)*odometry_.angular_velocity(2),odometry_.angular_velocity(1)*odometry_.angular_velocity(2),
+				odometry_.angular_velocity(0)*odometry_.angular_velocity(2),0,-odometry_.angular_velocity(0)*odometry_.angular_velocity(2),
+				-odometry_.angular_velocity(0)*odometry_.angular_velocity(1),odometry_.angular_velocity(0)*odometry_.angular_velocity(1),0;
+	//ICL integral	
+	Y_omega_J = Y_omega*Eigen::Vector3d(vehicle_parameters_.inertia_(0,0),vehicle_parameters_.inertia_(1,1),vehicle_parameters_.inertia_(2,2));
+
+	y = y + thrust*dt - Y_array.front()*dt; 
+
+	y_omega = 	y_omega + Y_omega_J*dt - Y_omega_array.front()*dt 
+				+ Eigen::Vector3d((	odometry_.angular_velocity(0) - last_angular_velocity(0))*vehicle_parameters_.inertia_(0,0),
+								  (	odometry_.angular_velocity(1) - last_angular_velocity(1))*vehicle_parameters_.inertia_(1,1),
+								  (	odometry_.angular_velocity(2) - last_angular_velocity(2))*vehicle_parameters_.inertia_(2,2));
+
+	M_hat = M_hat + *moment_control_input*dt - M_array.front()*dt;
+
+	//update array
+	Y_array.pop();
+	W_array.pop();
+	Y_omega_array.pop();
+	M_array.pop();
+	Y_array.push(thrust);
+	W_array.push(odometry_.angular_velocity);
+	Y_omega_array.push(Y_omega_J);	
+	M_array.push(*moment_control_input);
+
+	// integration
+	if(ICL_flag<ICL_INTERGAL_TIMES){
+			ICL_flag ++;	
+			theta_hat_dot = -adaptive_gamma*thrust*(angular_rate_error+adaptive_c2*angle_error);
+		}
+	else{
+
+    		double sigma_y;
+			
+    		Eigen::Vector3d x = Eigen::Vector3d::Zero();
+    		Eigen::Vector3d sigma_y_omega = Eigen::Vector3d::Zero();
+    		Eigen::Vector3d sigma_M_hat = Eigen::Vector3d::Zero();
+    		Eigen::Vector3d sigma_y_theta = Eigen::Vector3d::Zero();
+
+			for(int i = 0 ; i< ICL_N-1 ; i++){
+				sigma_array[i].y = sigma_array[i+1].y;
+				sigma_array[i].y_omega = sigma_array[i+1].y_omega ;
+				sigma_array[i].M_hat = sigma_array[i+1].M_hat ;
+			}
+				sigma_array[ICL_N-1].y = y;
+				sigma_array[ICL_N-1].y_omega = y_omega ;
+				sigma_array[ICL_N-1].M_hat = M_hat ;
+			
+			for(int i =0 ; i < ICL_N ; i++){
+				x = x + sigma_array[i].y*( sigma_array[i].y*adaptive_ICL_theta_ - (sigma_array[i].M_hat - sigma_array[i].y_omega) );
+			}
+			std::cout << "y: " << sigma_array[ICL_N-1].y << std::endl;
+			std::cout << "M_hat: " << sigma_array[ICL_N-1].M_hat << std::endl;
+			std::cout << "y_omega: " << sigma_array[ICL_N-1].y_omega << std::endl;
+			std::cout << "y_omega_J: " << y_omega << std::endl;
+			std::cout << "x: " << x << std::endl;
+
+			theta_hat_dot = -adaptive_gamma*thrust*(angular_rate_error+adaptive_c2*angle_error) - k_icl*adaptive_gamma*x;
+		
+		}
+	adaptive_ICL_theta_ += theta_hat_dot;
+	adaptive_ICL_theta_(2) = 0;
+	std::cout<<"r_y:"<<adaptive_ICL_theta_(0)<<"\t";
+	std::cout<<"-r_x:"<<adaptive_ICL_theta_(1)<<"\t";
+	std::cout<<"r_z:"<<adaptive_ICL_theta_(2)<<std::endl;
+#endif
 }
 }

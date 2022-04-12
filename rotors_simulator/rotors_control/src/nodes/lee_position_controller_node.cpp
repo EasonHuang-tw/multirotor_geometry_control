@@ -25,6 +25,7 @@
 
 #include "rotors_control/parameters_ros.h"
 
+#include <rotors_control/states.h>
 namespace rotors_control
 {
 LeePositionControllerNode::LeePositionControllerNode(const
@@ -49,6 +50,10 @@ LeePositionControllerNode::LeePositionControllerNode(const
 	                                        mav_msgs::default_topics::COMMAND_ACTUATORS, 1);
 
 	error_pub_ = nh_.advertise<nav_msgs::Odometry>("/error", 1);
+	
+	theta_pub_ = nh_.advertise<geometry_msgs::Vector3>("/theta", 1);
+	
+	states_pub_ = nh_.advertise<states>("/states", 1);
 
 	command_timer_ = nh_.createTimer(ros::Duration(0), &LeePositionControllerNode::TimedCommandCallback, this,
 	                                 true, false);
@@ -180,17 +185,30 @@ void LeePositionControllerNode::TimedCommandCallback(const ros::TimerEvent& e)
 void LeePositionControllerNode::OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg)
 {
 	ROS_INFO_ONCE("LeePositionController got first odometry message.");
-
 	// put sensor data from gazebo to lee_position_controller_
 	// odometry contain position, orientation, velocity, angular_velocity
+    
+	//######             test frequency 		###### 
+	double now = odometry_msg->header.stamp.toNSec()*1e-9;
+	double dt = now - last_time;
+    std::cout <<"freq: "<<1/dt<<std::endl;
+    last_time = now;
+
 	EigenOdometry odometry;
 	eigenOdometryFromMsg(odometry_msg, &odometry);
 	lee_position_controller_.SetOdometry(odometry);
-
-	// CalculateRotorVelocities() is called to calculate rotor velocities and put into ref_rotor_velocities
-	Eigen::VectorXd ref_rotor_velocities;
-	nav_msgs::Odometry error;
-	lee_position_controller_.CalculateRotorVelocities(&ref_rotor_velocities, &error);
+	kalmen_filter_estimation_.Predict(	-lee_position_controller_.adaptive_ICL_theta_(1),
+										 lee_position_controller_.adaptive_ICL_theta_(0),
+										lee_position_controller_,
+										dt);
+	kalmen_filter_estimation_.Correction(	-lee_position_controller_.adaptive_ICL_theta_(1),
+										 	lee_position_controller_.adaptive_ICL_theta_(0),
+											lee_position_controller_);
+	kalmen_filter_estimation_.get_states(kf_states);
+  // CalculateRotorVelocities() is called to calculate rotor velocities and put into ref_rotor_velocities
+ 	Eigen::VectorXd ref_rotor_velocities;
+ 	nav_msgs::Odometry error;
+  	lee_position_controller_.CalculateRotorVelocities(&ref_rotor_velocities, &error, dt);
 
 	// Todo(ffurrer): Do this in the conversions header.
 	mav_msgs::ActuatorsPtr actuator_msg(new mav_msgs::Actuators);
@@ -201,8 +219,24 @@ void LeePositionControllerNode::OdometryCallback(const nav_msgs::OdometryConstPt
 	actuator_msg->header.stamp = odometry_msg->header.stamp;
 
 	motor_velocity_reference_pub_.publish(actuator_msg);
+	geometry_msgs::Vector3 theta_value;
+	theta_value.x = lee_position_controller_.adaptive_ICL_theta_(0);
+	theta_value.y = lee_position_controller_.adaptive_ICL_theta_(1);
+	theta_value.z = lee_position_controller_.adaptive_ICL_theta_(2);
 
+	std::cout << "states: " <<kf_states<<std::endl;
+	rotors_control::states state_value;	
+	state_value.x = kf_states(0);
+	state_value.y = kf_states(1);
+	state_value.z = kf_states(2);
+	state_value.vx = kf_states(3);
+	state_value.vy = kf_states(4);
+	state_value.vz = kf_states(5);
+	state_value.r_mp_z = kf_states(6);
+	
 	error_pub_.publish(error);
+	theta_pub_.publish(theta_value);
+	states_pub_.publish(state_value);
 }
 
 }
