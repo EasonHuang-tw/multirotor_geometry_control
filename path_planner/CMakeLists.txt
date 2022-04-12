@@ -60,11 +60,11 @@ add_library(HYAS ${SOURCES} ${HEADERS})
 catkin_package()
 
 ## OPEN MOTION PLANNING LIBRARY
-find_package(OMPL REQUIRED)
+find_package(ompl REQUIRED)
 
-if(NOT OMPL_FOUND)
+if(NOT ompl_FOUND)
     message(AUTHOR_WARNING,"Open Motion Planning Library not found")
-endif(NOT OMPL_FOUND)
+endif(NOT ompl_FOUND)
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 include_directories(include ${OMPL_INCLUDE_DIRS})
