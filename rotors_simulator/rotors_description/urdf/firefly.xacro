@@ -205,7 +205,7 @@
 		<!--
 		<origin xyz="0 0.1 ${rotor_offset_top}" rpy="0 0 0" />
 		-->
-		<origin xyz="0.5 0.5 0.25" rpy="0 0 0" />
+		<origin xyz="0.5 0.5 0" rpy="0 0 0" />
 </joint>
 <link name="mass_piece">
 	<inertial>

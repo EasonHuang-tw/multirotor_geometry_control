@@ -7,6 +7,7 @@
 #include <tf/transform_datatypes.h>
 #include <qptrajectory.h>
 #include <cstdio>
+#include <cmath>
 #include <unistd.h>
 #include <termios.h>
 #include <fcntl.h>
@@ -19,6 +20,7 @@
 #include <trajectory_msgs/MultiDOFJointTrajectoryPoint.h>
 #include <sensor_msgs/Imu.h>
 #include <nav_msgs/Odometry.h>
+#include <unistd.h>
 #define normal
 #define PI 3.14159
 
@@ -56,7 +58,7 @@ int main(int argc, char **argv)
 	path_def path;
 	trajectory_profile p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11;
 	std::vector<trajectory_profile> data;
-	double sample = 0.003;
+	double sample = 0.02;
 
 	p1.pos << 0, 0, 1.3;
 	p1.vel<< 0, 0, 0;
@@ -135,7 +137,7 @@ int main(int argc, char **argv)
 	traj.transforms.push_back(transform);
 	traj.velocities.push_back(twist);
 	traj.accelerations.push_back(twist);
-
+	double t_start = ros::Time::now().toSec();
 	while(ros::ok()) {
 
 		if(nh.getParam("/start",flag)) {
@@ -163,8 +165,6 @@ int main(int argc, char **argv)
 			az = data[tick].acc(2);
 			tick++;
 
-			double t = ros::Time::now().toSec();
-			//std::cout << "time is " << t << std::endl;
 #if 0
 			vir_x = 0;
 			vir_y = 0;
@@ -180,6 +180,18 @@ int main(int argc, char **argv)
 #endif
 		}
 
+		double t = ros::Time::now().toSec() - t_start;
+		double r = 2;
+		double T = 100;
+		vir_x = r*cos(2.0*M_PI*t/T)+r*cos(M_PI*t/T)+r*cos(0.14*M_PI*t/T);
+		vir_y = r*sin(2.6*M_PI*t/T)+r*sin(1.4*M_PI*t/T)+r*sin(0.06*M_PI*t/T);
+		vir_z = 1.3;
+		vx = -r*(2.0*M_PI/T)*sin(2.0*M_PI*t/T)-r*(M_PI/T)*sin(M_PI*t/T)-r*(0.14*M_PI/T)*sin(0.14*M_PI*t/T);
+		vy = r*(2.6*M_PI/T)*cos(2.6*M_PI*t/T)+r*(1.4*M_PI/T)*cos(1.4*M_PI*t/T)+r*(0.06*M_PI/T)*cos(0.06*M_PI*t/T);
+		vz = 0; 
+		ax = -r*(2.0*M_PI/T)*(2.0*M_PI/T)*cos(2.0*M_PI*t/T)-r*(M_PI/T)*(M_PI/T)*cos(M_PI*t/T)-r*(0.14*M_PI/T)*(0.14*M_PI/T)*cos(0.14*M_PI*t/T);
+		ay = -r*(2.6*M_PI/T)*(2.6*M_PI/T)*sin(2.6*M_PI*t/T)-r*(1.4*M_PI/T)*(1.4*M_PI/T)*sin(1.4*M_PI*t/T)-r*(0.06*M_PI/T)*(0.06*M_PI/T)*sin(0.06*M_PI*t/T);
+		az = 0; 
 		traj.transforms[0].translation.x = vir_x;
 		traj.transforms[0].translation.y = vir_y;
 		traj.transforms[0].translation.z = vir_z;
