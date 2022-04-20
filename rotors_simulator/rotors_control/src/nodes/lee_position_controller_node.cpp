@@ -233,7 +233,7 @@ void LeePositionControllerNode::OdometryCallback(const nav_msgs::OdometryConstPt
 	state_value.vy = kf_states(4);
 	state_value.vz = kf_states(5);
 	state_value.r_mp_z = kf_states(6);
-	
+	error.header.stamp = ros::Time::now();	
 	error_pub_.publish(error);
 	theta_pub_.publish(theta_value);
 	states_pub_.publish(state_value);
